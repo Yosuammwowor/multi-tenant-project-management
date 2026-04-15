@@ -39,8 +39,15 @@ class User {
   async createUser(data) {
     try {
       return await this.conn.execute(
-        "INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)",
-        [data.id, data.username, data.email, data.password_hash],
+        "INSERT INTO users (id, tenant_id, name, email, password, role) VALUES (?, ?, ?, ?, ?, ?)",
+        [
+          data.id,
+          data.tenantId,
+          data.name,
+          data.email,
+          data.password,
+          data.role,
+        ],
       );
     } catch (error) {
       throw error;
