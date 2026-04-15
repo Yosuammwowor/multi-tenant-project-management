@@ -3,6 +3,70 @@ import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 import { User } from "../models/User.js";
 
+async function controllerRegister(req, res) {
+  const { tenantId, name, email, password, role } = req.body;
+
+  // check missing value
+  if (!tenantId || !name || !email || !password) {
+    return res.status(400).json({
+      status: "fail",
+      message:
+        "Invalid, missing value 'company', 'name', 'email', or 'password'",
+    });
+  }
+
+  // check data type
+  if (
+    typeof tenantId !== "string" ||
+    typeof name !== "string" ||
+    typeof email !== "string" ||
+    typeof password !== "string"
+  ) {
+    return res
+      .status(400)
+      .json({ status: "fail", message: "Invalid, incorrect data type" });
+  }
+
+  const id = await nanoid();
+  const password_hash = await bcrypt.hash(password, await bcrypt.genSalt());
+  const userData = {
+    id: id,
+    tenantId: tenantId,
+    name: name,
+    email: email,
+    password: password_hash,
+    role: role ? role : "user",
+  };
+
+  try {
+    const user = await User.create(userData);
+    await user.createUser(userData);
+
+    const token = jwt.sign(
+      { userId: userData.id, role: userData.role, tenantId: userData.tenantId },
+      process.env.SECRET,
+      { expiresIn: 30 },
+    );
+
+    res.status(200).json({
+      status: "success",
+      token: token,
+      message: "Data successfully added!",
+    });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res
+        .status(409)
+        .json({
+          status: "fail",
+          message: "Invalid, duplicate user 'id' or 'email'",
+        });
+    }
+
+    res.status(500).json({ status: "error", message: error.message });
+  }
+}
+
 async function controllerLogin(req, res) {
   const { email, password } = req.body;
 
@@ -47,67 +111,6 @@ async function controllerLogin(req, res) {
 
     res.status(200).json({ status: "success", token: token });
   } catch (error) {
-    res.status(500).json({ status: "error", message: error.message });
-  }
-}
-
-async function controllerRegister(req, res) {
-  const { tenantId, name, email, password, role } = req.body;
-
-  // check missing value
-  if (!tenantId || !name || !email || !password) {
-    return res.status(400).json({
-      status: "fail",
-      message:
-        "Invalid, missing value 'company', 'name', 'email', or 'password'",
-    });
-  }
-
-  // check data type
-  if (
-    typeof name !== "number" ||
-    typeof name !== "string" ||
-    typeof email !== "string" ||
-    typeof password !== "string"
-  ) {
-    return res
-      .status(400)
-      .json({ status: "fail", message: "Invalid, incorrect data type" });
-  }
-
-  const id = await nanoid();
-  const password_hash = await bcrypt.hash(password, await bcrypt.genSalt());
-  const userData = {
-    id: id,
-    tenantId: tenantId,
-    name: name,
-    email: email,
-    password: password_hash,
-    role: role,
-  };
-
-  try {
-    const user = await User.create(userData);
-    await user.createUser(userData);
-
-    const token = jwt.sign(
-      { userId: userData.id, role: userData.role, tenantId: userData.tenantId },
-      process.env.SECRET,
-      { expiresIn: 30 },
-    );
-
-    res.status(200).json({
-      status: "success",
-      token: token,
-      message: "Data successfully added!",
-    });
-  } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") {
-      return res
-        .status(409)
-        .json({ status: "fail", message: "Invalid, duplicate user id" });
-    }
-
     res.status(500).json({ status: "error", message: error.message });
   }
 }
