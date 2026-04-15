@@ -21,11 +21,26 @@ class User {
     }
   }
 
-  async getUser(email) {
+  async getUserByEmail(email) {
     try {
       const [result] = await this.conn.execute(
         "SELECT * FROM users WHERE email = ?",
         [email],
+      );
+
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      this.conn.release();
+    }
+  }
+
+  async getUserById(id) {
+    try {
+      const [result] = await this.conn.execute(
+        "SELECT * FROM users WHERE id = ?",
+        [id],
       );
 
       return result;

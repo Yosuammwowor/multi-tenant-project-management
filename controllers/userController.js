@@ -55,12 +55,10 @@ async function controllerRegister(req, res) {
     });
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      return res
-        .status(409)
-        .json({
-          status: "fail",
-          message: "Invalid, duplicate user 'id' or 'email'",
-        });
+      return res.status(409).json({
+        status: "fail",
+        message: "Invalid, duplicate user 'id' or 'email'",
+      });
     }
 
     res.status(500).json({ status: "error", message: error.message });
@@ -87,7 +85,7 @@ async function controllerLogin(req, res) {
 
   try {
     const user = await User.create();
-    const result = await user.getUser(email);
+    const result = await user.getUserByEmail(email);
 
     // check user email
     if (result.length === 0) {
@@ -97,17 +95,22 @@ async function controllerLogin(req, res) {
     }
 
     // comparing password
-    const validPassword = await bcrypt.compare(
-      password,
-      result[0].password_hash,
-    );
+    const validPassword = await bcrypt.compare(password, result[0].password);
     if (!validPassword) {
       return res
         .status(401)
         .json({ status: "fail", message: "Invalid, incorrect password" });
     }
 
-    const token = jwt.sign(result[0], process.env.SECRET, { expiresIn: 15 });
+    const token = jwt.sign(
+      {
+        userId: result[0].id,
+        role: result[0].role,
+        tenantId: result[0].tenant_id,
+      },
+      process.env.SECRET,
+      { expiresIn: 30 },
+    );
 
     res.status(200).json({ status: "success", token: token });
   } catch (error) {
@@ -129,7 +132,14 @@ async function controllerGetAllUsers(req, res) {
 }
 
 async function controllerGetProfile(req, res) {
-  res.status(200).json({ status: "success", data: req.user });
+  try {
+    const user = await User.create();
+    const result = await user.getUserById(req.user.userId);
+
+    res.status(200).json({ status: "success", data: result });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
 }
 
 export {
