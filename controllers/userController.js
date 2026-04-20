@@ -39,7 +39,7 @@ async function controllerRegister(req, res) {
   };
 
   try {
-    const user = await User.create(userData);
+    const user = await User.create();
     await user.createUser(userData);
 
     const token = jwt.sign(
@@ -142,9 +142,63 @@ async function controllerGetProfile(req, res) {
   }
 }
 
+async function controllerInviteUser(req, res) {
+  const { tenantId, name, email, password } = req.body;
+
+  // check missing value
+  if (!tenantId || !name || !email || !password) {
+    return res.status(400).json({
+      status: "fail",
+      message:
+        "Invalid, missing value 'company', 'name', 'email', or 'password'",
+    });
+  }
+
+  // check data type
+  if (
+    typeof tenantId !== "string" ||
+    typeof name !== "string" ||
+    typeof email !== "string" ||
+    typeof password !== "string"
+  ) {
+    return res
+      .status(400)
+      .json({ status: "fail", message: "Invalid, incorrect data type" });
+  }
+
+  const id = await nanoid();
+  const password_hash = await bcrypt.hash(password, await bcrypt.genSalt());
+  const userData = {
+    id: id,
+    tenantId: tenantId,
+    name: name,
+    email: email,
+    password: password_hash,
+    role: "user",
+  };
+
+  try {
+    const user = await User.create();
+    await user.createUser(userData);
+
+    res
+      .status(200)
+      .json({ status: "success", message: "Data successfully added!" });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res
+        .status(409)
+        .json({ status: "fail", code: error.name, message: error.message });
+    }
+
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+}
+
 export {
   controllerGetAllUsers,
   controllerLogin,
   controllerRegister,
   controllerGetProfile,
+  controllerInviteUser,
 };

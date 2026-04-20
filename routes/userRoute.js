@@ -6,6 +6,7 @@ import {
   controllerGetProfile,
   controllerRegister,
   controllerLogin,
+  controllerInviteUser,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -20,5 +21,7 @@ router.post("/login", controllerLogin);
 router.get("/profile", auth, controllerGetProfile);
 // GET all users
 router.get("/", auth, roleCheck("admin"), controllerGetAllUsers);
+// POST admin invite
+router.post("/invite", auth, roleCheck("admin"), controllerInviteUser);
 
 export { router };
