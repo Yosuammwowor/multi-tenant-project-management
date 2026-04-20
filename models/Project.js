@@ -24,6 +24,19 @@ class Project {
       this.conn.release();
     }
   }
+
+  async createProject(data) {
+    try {
+      return await this.conn.execute(
+        "INSERT INTO projects (id, tenant_id, name) VALUES (?, ?, ?)",
+        [data.id, data.tenantId, data.name],
+      );
+    } catch (error) {
+      throw error;
+    } finally {
+      this.conn.release();
+    }
+  }
 }
 
 export { Project };
