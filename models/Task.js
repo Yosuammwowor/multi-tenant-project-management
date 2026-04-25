@@ -24,6 +24,19 @@ class Task {
       this.conn.release();
     }
   }
+
+  async createTask(data) {
+    try {
+      return await this.conn.execute(
+        "INSERT INTO tasks (id, project_id, assigned_to, title) VALUES (?, ?, ?, ?)",
+        [data.id, data.projectId, data.userId, data.title],
+      );
+    } catch (error) {
+      throw error;
+    } finally {
+      this.conn.release();
+    }
+  }
 }
 
 export { Task };
