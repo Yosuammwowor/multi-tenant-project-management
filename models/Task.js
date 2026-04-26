@@ -37,6 +37,19 @@ class Task {
       this.conn.release();
     }
   }
+
+  async changeOfDuty(data) {
+    try {
+      return await this.conn.execute(
+        "UPDATE tasks SET assigned_to = ? WHERE id = ?",
+        [data.userId, data.id],
+      );
+    } catch (error) {
+      throw error;
+    } finally {
+      this.conn.release();
+    }
+  }
 }
 
 export { Task };

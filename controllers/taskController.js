@@ -63,4 +63,41 @@ async function controllerCreateTask(req, res) {
   }
 }
 
-export { controllerGetUserTasks, controllerCreateTask };
+async function controllerChangeOfDuty(req, res) {
+  const id = req.params.id;
+  const { assigned_to } = req.body;
+
+  // missing value
+  if (!assigned_to) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Invalid, missing value 'assigned_to'",
+    });
+  }
+
+  // incorrect data type
+  if (typeof assigned_to !== "string") {
+    return res
+      .status(400)
+      .json({ status: "fail", message: "Invalid, incorrect data type" });
+  }
+
+  try {
+    const task = await Task.create();
+    await task.changeOfDuty({ userId: assigned_to, id: id });
+
+    res
+      .status(200)
+      .json({ status: "success", message: "Data successfully updated!" });
+  } catch (error) {
+    // no user match
+    if ((error.errno = 1452)) {
+      res
+        .status(409)
+        .json({ status: "fail", message: "Invalid, no user match" });
+    }
+    res.status(500).json({ status: "error", message: error });
+  }
+}
+
+export { controllerGetUserTasks, controllerCreateTask, controllerChangeOfDuty };
